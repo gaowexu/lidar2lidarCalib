@@ -8,6 +8,8 @@
 \usepackage{geometry}
 \usepackage{amsmath}
 \usepackage{bm}
+\usepackage{hyperref}
+
 \geometry{a4paper, top = 2.2cm, bottom = 2.2cm, left=3.2cm, right=3.2cm}
 
 
@@ -54,85 +56,56 @@ $\bm{T}_{r2t}^{(3\times 1)}$ is the coordinate of the right lidar's origin in to
 
 
 
-\section{Notation}
-Consider a pixel point of lane lines in image plane $P_i = (u, v, 1)^T$, its corresponding 3D point in camera frame is noted as $P_c = (x_c, y_c, z_c)^T$ and its representation in ego frame is $P_w = (x_w, z_w, z_w)^T$. \\
+\section{Extrinsic Matrix to Euler Angles}
+Use tool lidar2lidar calibration tool (\url{https://github.com/gaowexu/SensorsCalibration})
+ to manually calibrate point cloud frames captured at the same timestamp and then could obtain the typical extrinsic matrix as below: \\
 
-The rotation matrix from world frame to camera frame is represented as $\bm{R}_{3\times 3}$.\\
-The position of camera frame's origin point in world frame is represented as $\bm{O}_{3\times 1}$, we have extrinsic translation matrix $\bm{T}_{3\times 1} = \bm{R}_{3\times 3} \bm{O}_{3\times 3}$. \\
-The camera intrinsic matrix is represented as $\bm{I}_{3\times 3}$.\\
-
-
-\section{Formualation}
-Follow the camera extrinisc and intrinsic model, the relationship between $P_w$ and $P_c$, $P_c$ and $P_i$ are formulated as:
-\begin{equation}
-P_c = \bm{R}_{3\times 3} P_w - \bm{T}_{3\times 1}
-\end{equation}
 
 \begin{equation}
-P_i = \frac{1}{z_c}\bm{I}_{3\times 3} P_c
-\end{equation}
-
-respectively. Combine Equation 1 and 2, we can obtain:
-\begin{equation}
-z_c \begin{bmatrix}
-u \\
-v \\
-1
-\end{bmatrix} = \bm{I}_{3\times 3}\bm{R}_{3\times 3} \begin{bmatrix}
-x_w \\
-y_w \\
-z_w
-\end{bmatrix} - \bm{I}_{3\times 3}\bm{T}_{3\times 1}
+\bm{E}_{l2t} = \begin{bmatrix}
+-0.184349 & -0.98286 & 0.0 & 0.54602 \\
+0.98286 & -0.184349 & 0.0 & 0.90732 \\
+0.0 & 0.0 & 1.0 & -0.642478 \\
+0.0 & 0.0 & 0.0 & 1.0 
+\end{bmatrix}
 \end{equation} \\
 
-Therefore, 
+
 \begin{equation}
-\bm{R}^{-1}_{3\times 3}\bm{I}^{-1}_{3\times 3}\left(z_c \begin{bmatrix}
-u \\
-v \\
-1
-\end{bmatrix} + \bm{I}_{3\times 3}\bm{T}_{3\times 1} \right) = \begin{bmatrix}
-x_w \\
-y_w \\
-z_w
+\bm{E}_{r2t} = \begin{bmatrix}
+-0.228178 & 0.972368 & 0.0 & 0.636313 \\
+-0.972088 & -0.230317 & 0.0 & -0.78358 \\
+0.0 & 0.0 & 1.0 & -0.642478 \\
+0.0 & 0.0 & 0.0 & 1.0 
 \end{bmatrix}
-\end{equation}
-
-In the equation above, it is worth mentioning that the extrinsic matrix $\bm{R}_{3\times 3}$, 
-$\bm{T}_{3\times 1}$ and the camera intrisic matrix $\bm{I}_{3\times 3}$ are calibirated in advance and already known. However, the depth $z_c$ is unknown and it is crital for calculating $P_w$. \\
-
-We introduce three assumptions:\\
-1. the ground plane is extremely flat; \\
-2. the ego frame's $XY-plane$ is parallel with ground; \\
-3. the origin point of ego frame is with height $H_t$ with respect to ground. \\
-
-Then, we could config $z_w$ in Equation 4 to $-H_t$, we represent $\bm{R}^{-1}_{3\times 3}\bm{I}^{-1}_{3\times 3}$ and $\bm{I}_{3\times 3}\bm{T}_{3\times 1}$ as below:
-\begin{equation}
-\bm{R}^{-1}_{3\times 3}\bm{I}^{-1}_{3\times 3} = \begin{bmatrix}
-a_{11} & a_{12} & a_{13} \\
-a_{21} & a_{22} & a_{23} \\
-a_{31} & a_{32} & a_{33} 
-\end{bmatrix}, \bm{I}_{3\times 3}\bm{T}_{3\times 1} = \begin{bmatrix}
-b1 \\
-b2 \\
-b3
-\end{bmatrix}
-\end{equation}
-
-Combine Equation 5 and Equation 4 with condition $z_w = -H_t$, we can obtain:
-\begin{equation}
-z_c(a_{31}u + a_{32}v + a_{33}) = -H_t - (a_{31} b_1 + a_{32} b2 + a_{33} b3)
-\end{equation} 
-
-i.e, the depth $z_c$ is:
-\begin{equation}
-z_c = \frac{-H_t - (a_{31} b_1 + a_{32} b2 + a_{33} b3)}{a_{31}u + a_{32}v + a_{33}}
 \end{equation} \\
 
-After $z_c$ is calculated, then the corresponding point $P_w$ could be easily obtained with Equation 4.
+When the extrinsic parameter matrixs are obtained, then we could convert it to yaw, pitch, roll based on the code below:
 
 
+\begin{verbatim}
+import math
+
+yaw = math.atan2(rotation_matrix[1][0], rotation_matrix[0][0])
+pitch = math.atan2(-rotation_matrix[2][0], \
+        np.sqrt(rotation_matrix[2][1] ** 2 + \
+        rotation_matrix[2][2] ** 2))
+roll = math.atan2(rotation_matrix[2][1], rotation_matrix[2][2])
+\end{verbatim}
 
 
+\section{ROS2 Bag Play}
+Run the two commands below to associate the left, right frames with front frame.
+\begin{verbatim}
+ros2 run tf2_ros static_transform_publisher \
+0.54602 0.90732 -0.642478 1.7562059520717546 -0.0 0.0 front left
+\end{verbatim}
+
+\begin{verbatim}
+ros2 run tf2_ros static_transform_publisher \
+0.636313 -0.78358 -0.642478 -1.801352191383159 -0.0 0.0 front right
+\end{verbatim}
+
+Then the points cloud in three lidars could be visualized at the same time in top-center lidar's coordinate system in rviz2.
 
 \end{document}

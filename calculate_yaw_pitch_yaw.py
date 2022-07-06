@@ -15,6 +15,7 @@ def calculate_yaw_pitch_roll_from_rotation_matrix(extrinsic_matrix_json_full_pat
 
     if "left_front_lidar-to-top_center_lidar-extrinsic" in json_data.keys():
         rotation_matrix = json_data["left_front_lidar-to-top_center_lidar-extrinsic"]["param"]["sensor_calib"]["data"]
+        print(rotation_matrix)
         yaw = math.atan2(rotation_matrix[1][0], rotation_matrix[0][0])
         pitch = math.atan2(-rotation_matrix[2][0], np.sqrt(rotation_matrix[2][1] ** 2 + rotation_matrix[2][2] ** 2))
         roll = math.atan2(rotation_matrix[2][1], rotation_matrix[2][2])
@@ -24,6 +25,7 @@ def calculate_yaw_pitch_roll_from_rotation_matrix(extrinsic_matrix_json_full_pat
 
     else:
         rotation_matrix = json_data["right_front_lidar-to-top_center_lidar-extrinsic"]["param"]["sensor_calib"]["data"]
+        print(rotation_matrix)
         yaw = math.atan2(rotation_matrix[1][0], rotation_matrix[0][0])
         pitch = math.atan2(-rotation_matrix[2][0], np.sqrt(rotation_matrix[2][1] ** 2 + rotation_matrix[2][2] ** 2))
         roll = math.atan2(rotation_matrix[2][1], rotation_matrix[2][2])
