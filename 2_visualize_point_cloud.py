@@ -19,5 +19,4 @@ def visualize(point_cloud):
 
 if __name__ == "__main__":
     pcd = open3d.io.read_point_cloud("./pcd/lidar__left__1656676877.20443.pcd")
-    print(pcd.points)
     visualize(point_cloud=pcd)
