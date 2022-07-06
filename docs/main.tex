@@ -1,0 +1,138 @@
+\documentclass[
+	letterpaper,
+	10pt, 
+]{CSUniSchoolLabReport}
+
+\addbibresource{sample.bib} 
+
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{bm}
+\geometry{a4paper, top = 2.2cm, bottom = 2.2cm, left=3.2cm, right=3.2cm}
+
+
+
+\title{Lidar-Lidar Extrinsic Matrix Manual Calibration User Guide} 
+
+\author{Smart Automobile, Inc.}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Notation}
+
+Consider a point in left lidar's frame $P_l = (x_l, y_l, z_l)^T$, its corresponding 3D point in top-center lidar's frame is $P_t = (x_t, y_t, z_t)^T$. The extrinsic matrix from left lidar to top-center lidar's frame is $\bm{E}_{l2t}$. Therefore, we have:
+\begin{equation}
+P_t = \bm{E}_{l2t} P_l
+\end{equation} \\
+
+Consider a point in right lidar's frame $P_r = (x_r, y_r, z_r)^T$, its corresponding 3D point in top-center lidar's frame is $P_t = (x_t, y_t, z_t)^T$. The extrinsic matrix from right lidar to top-center lidar's frame is $\bm{E}_{r2t}$. Therefore, we have:
+\begin{equation}
+P_t = \bm{E}_{r2t} P_r
+\end{equation} \\
+
+
+$\bm{E}_{l2t}$ and $\bm{E}_{r2t}$ could be formualted as:
+
+\begin{equation}
+\bm{E}_{l2t} = \begin{bmatrix}
+\bm{R}_{l2t}^{(3\times 3)} & \bm{T}_{l2t}^{(3\times 1)} \\
+\bm{0}_{1\times 3} & \bm{1}_{1 \times 1}
+\end{bmatrix},
+\bm{E}_{r2t} = \begin{bmatrix}
+\bm{R}_{r2t}^{(3\times 3)} & \bm{T}_{r2t}^{(3\times 1)} \\
+\bm{0}_{1\times 3} & \bm{1}_{1 \times 1}
+\end{bmatrix}
+\end{equation} \\
+
+$\bm{T}_{l2t}^{(3\times 1)}$ is the coordinate of the left lidar's origin in top-center lidar's frame.  \\
+$\bm{T}_{r2t}^{(3\times 1)}$ is the coordinate of the right lidar's origin in top-center lidar's frame. 
+
+
+
+\section{Notation}
+Consider a pixel point of lane lines in image plane $P_i = (u, v, 1)^T$, its corresponding 3D point in camera frame is noted as $P_c = (x_c, y_c, z_c)^T$ and its representation in ego frame is $P_w = (x_w, z_w, z_w)^T$. \\
+
+The rotation matrix from world frame to camera frame is represented as $\bm{R}_{3\times 3}$.\\
+The position of camera frame's origin point in world frame is represented as $\bm{O}_{3\times 1}$, we have extrinsic translation matrix $\bm{T}_{3\times 1} = \bm{R}_{3\times 3} \bm{O}_{3\times 3}$. \\
+The camera intrinsic matrix is represented as $\bm{I}_{3\times 3}$.\\
+
+
+\section{Formualation}
+Follow the camera extrinisc and intrinsic model, the relationship between $P_w$ and $P_c$, $P_c$ and $P_i$ are formulated as:
+\begin{equation}
+P_c = \bm{R}_{3\times 3} P_w - \bm{T}_{3\times 1}
+\end{equation}
+
+\begin{equation}
+P_i = \frac{1}{z_c}\bm{I}_{3\times 3} P_c
+\end{equation}
+
+respectively. Combine Equation 1 and 2, we can obtain:
+\begin{equation}
+z_c \begin{bmatrix}
+u \\
+v \\
+1
+\end{bmatrix} = \bm{I}_{3\times 3}\bm{R}_{3\times 3} \begin{bmatrix}
+x_w \\
+y_w \\
+z_w
+\end{bmatrix} - \bm{I}_{3\times 3}\bm{T}_{3\times 1}
+\end{equation} \\
+
+Therefore, 
+\begin{equation}
+\bm{R}^{-1}_{3\times 3}\bm{I}^{-1}_{3\times 3}\left(z_c \begin{bmatrix}
+u \\
+v \\
+1
+\end{bmatrix} + \bm{I}_{3\times 3}\bm{T}_{3\times 1} \right) = \begin{bmatrix}
+x_w \\
+y_w \\
+z_w
+\end{bmatrix}
+\end{equation}
+
+In the equation above, it is worth mentioning that the extrinsic matrix $\bm{R}_{3\times 3}$, 
+$\bm{T}_{3\times 1}$ and the camera intrisic matrix $\bm{I}_{3\times 3}$ are calibirated in advance and already known. However, the depth $z_c$ is unknown and it is crital for calculating $P_w$. \\
+
+We introduce three assumptions:\\
+1. the ground plane is extremely flat; \\
+2. the ego frame's $XY-plane$ is parallel with ground; \\
+3. the origin point of ego frame is with height $H_t$ with respect to ground. \\
+
+Then, we could config $z_w$ in Equation 4 to $-H_t$, we represent $\bm{R}^{-1}_{3\times 3}\bm{I}^{-1}_{3\times 3}$ and $\bm{I}_{3\times 3}\bm{T}_{3\times 1}$ as below:
+\begin{equation}
+\bm{R}^{-1}_{3\times 3}\bm{I}^{-1}_{3\times 3} = \begin{bmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23} \\
+a_{31} & a_{32} & a_{33} 
+\end{bmatrix}, \bm{I}_{3\times 3}\bm{T}_{3\times 1} = \begin{bmatrix}
+b1 \\
+b2 \\
+b3
+\end{bmatrix}
+\end{equation}
+
+Combine Equation 5 and Equation 4 with condition $z_w = -H_t$, we can obtain:
+\begin{equation}
+z_c(a_{31}u + a_{32}v + a_{33}) = -H_t - (a_{31} b_1 + a_{32} b2 + a_{33} b3)
+\end{equation} 
+
+i.e, the depth $z_c$ is:
+\begin{equation}
+z_c = \frac{-H_t - (a_{31} b_1 + a_{32} b2 + a_{33} b3)}{a_{31}u + a_{32}v + a_{33}}
+\end{equation} \\
+
+After $z_c$ is calculated, then the corresponding point $P_w$ could be easily obtained with Equation 4.
+
+
+
+
+
+\end{document}
